@@ -6,36 +6,92 @@
     <style>
       body {
         font-family: Arial, sans-serif;
-        padding: 60px;
+        padding: 40px;
+      }
+      input {
+        padding: 8px;
+        width: 300px;
+        margin-bottom: 20px;
       }
       ul {
         line-height: 1.8;
+      }
+      .pagination button {
+        margin: 5px;
+        padding: 6px 10px;
+        cursor: pointer;
       }
     </style>
   </head>
   <body>
     <h1>📚 Learning PDFs</h1>
+
+    <input type="text" id="search" placeholder="Search PDFs..." />
+
     <ul id="pdf-list"></ul>
 
+    <div class="pagination" id="pagination"></div>
+
     <script>
-      fetch(
-        "https://api.github.com/repos/srirampeddapanta/pdf-learning-repo/contents/pdfs"
-      )
+      const REPO = "srirampeddapanta/pdf-learning-repo";
+      const PDF_PATH = "docs/pdfs"; // repo path
+      const PAGE_SIZE = 5;
+
+      let allPdfs = [];
+      let filtered = [];
+      let currentPage = 1;
+
+      fetch(`https://api.github.com/repos/${REPO}/contents/${PDF_PATH}`)
         .then((res) => res.json())
         .then((files) => {
-          const list = document.getElementById("pdf-list");
-          files
-            .filter((f) => f.name.endsWith(".pdf"))
-            .forEach((f) => {
-              const li = document.createElement("li");
-              const a = document.createElement("a");
-              a.href = `../pdfs/${f.name}`;
-              a.textContent = f.name;
-              a.target = "_blank";
-              li.appendChild(a);
-              list.appendChild(li);
-            });
+          allPdfs = files.filter((f) => f.name.endsWith(".pdf"));
+          filtered = allPdfs;
+          render();
         });
+
+      document.getElementById("search").addEventListener("input", (e) => {
+        const q = e.target.value.toLowerCase();
+        filtered = allPdfs.filter((f) => f.name.toLowerCase().includes(q));
+        currentPage = 1;
+        render();
+      });
+
+      function render() {
+        const list = document.getElementById("pdf-list");
+        list.innerHTML = "";
+
+        const start = (currentPage - 1) * PAGE_SIZE;
+        const pageItems = filtered.slice(start, start + PAGE_SIZE);
+
+        pageItems.forEach((f) => {
+          const li = document.createElement("li");
+          const a = document.createElement("a");
+          a.href = `./pdfs/${f.name}`; // ✅ FIXED URL
+          a.textContent = f.name;
+          a.target = "_blank";
+          li.appendChild(a);
+          list.appendChild(li);
+        });
+
+        renderPagination();
+      }
+
+      function renderPagination() {
+        const pages = Math.ceil(filtered.length / PAGE_SIZE);
+        const container = document.getElementById("pagination");
+        container.innerHTML = "";
+
+        for (let i = 1; i <= pages; i++) {
+          const btn = document.createElement("button");
+          btn.textContent = i;
+          btn.disabled = i === currentPage;
+          btn.onclick = () => {
+            currentPage = i;
+            render();
+          };
+          container.appendChild(btn);
+        }
+      }
     </script>
   </body>
 </html>
