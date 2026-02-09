@@ -41,12 +41,22 @@
       let filtered = [];
       let currentPage = 1;
 
-      fetch(`https://api.github.com/repos/${REPO}/contents/${PDF_PATH}`)
-        .then((res) => res.json())
+      fetch(`https://api.github.com/repos/${REPO}/contents/docs/pdfs?ref=main`)
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`GitHub API returned status ${res.status}`);
+          }
+          return res.json();
+        })
         .then((files) => {
-          allPdfs = files.filter((f) => f.name.endsWith(".pdf"));
+          allPdfs = files.filter(
+            (f) => f.type === "file" && f.name.endsWith(".pdf")
+          );
           filtered = allPdfs;
           render();
+        })
+        .catch((err) => {
+          console.error("Error fetching PDF list:", err);
         });
 
       document.getElementById("search").addEventListener("input", (e) => {
